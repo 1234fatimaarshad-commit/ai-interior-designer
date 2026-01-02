@@ -2,82 +2,77 @@ import streamlit as st
 import colorsys
 
 # --- 1. Page Config ---
-st.set_page_config(page_title="AI Interior Lab", layout="wide")
+st.set_page_config(page_title="AI Interior Design Lab", layout="wide", page_icon="🏠")
 
-# --- 2. Color Logic ---
+# --- 2. Professional Color Logic ---
 def get_complementary(hex_color):
     hex_color = hex_color.lstrip('#')
     rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
     h, s, v = colorsys.rgb_to_hsv(rgb[0]/255, rgb[1]/255, rgb[2]/255)
-    return '#%02x%02x%02x' % tuple(int(x*255) for x in colorsys.hsv_to_rgb((h + 0.5) % 1.0, s, v))
+    # Shifts hue by 180 degrees for perfect contrast
+    comp_h = (h + 0.5) % 1.0
+    return '#%02x%02x%02x' % tuple(int(x*255) for x in colorsys.hsv_to_rgb(comp_h, s, v))
 
-# --- 3. Sidebar ---
+# --- 3. Sidebar Inputs ---
 with st.sidebar:
-    st.header("🛠️ Design Inputs")
-    room_type = st.selectbox("Room Type", ["Living Room", "Bedroom", "Office"])
-    style = st.selectbox("Aesthetic", ["Modern", "Industrial", "Minimalist"])
+    st.header("🛠️ Design Parameters")
+    room_type = st.selectbox("Room Type", ["Living Room", "Bedroom", "Office", "Kitchen"])
+    style = st.selectbox("Aesthetic Style", ["Modern", "Minimalist", "Industrial", "Scandinavian"])
+    
+    st.divider()
     l = st.number_input("Length (ft)", min_value=5, value=15)
     w = st.number_input("Width (ft)", min_value=5, value=12)
-    user_color = st.color_picker("Theme Color", "#3498db")
+    user_color = st.color_picker("Primary Theme Color", "#3498db")
     
-    generate_btn = st.button("🚀 Generate AI Layout", use_container_width=True)
+    generate_btn = st.button("🚀 Generate AI Design", use_container_width=True)
 
 # --- 4. Main Screen ---
-st.title("🏠 AI Interior Layout Engine")
+st.title("🏠 AI Interior Design Studio")
 
 if generate_btn:
     comp_color = get_complementary(user_color)
     area = l * w
     
-    col1, col2 = st.columns([1, 2])
+    # Analysis Section
+    col1, col2 = st.columns([1, 1])
     with col1:
-        st.subheader("📐 Analysis")
-        st.metric("Total Area", f"{area} sq. ft.")
-        st.write(f"**Style:** {style}")
-        st.write(f"**Contrast Color:** {comp_color}")
-        
-        st.info(f"AI suggests a {style} furniture set using {user_color} as the base and {comp_color} for accents.")
+        st.subheader("📐 Spatial Analysis")
+        st.write(f"**Room Configuration:** {style} {room_type}")
+        st.write(f"**Calculated Area:** {area} sq. ft.")
+        st.info(f"AI suggests {style} furniture placement to optimize the {area} sq. ft. area.")
 
     with col2:
-        st.subheader("🗺️ AI Generated Floor Plan")
-        
-        # We calculate the scaling to fit the screen
-        scale = 20  # 1 foot = 20 pixels
-        pixel_w = w * scale
-        pixel_l = l * scale
-
-        # This is a PURE CODE-BASED DRAWING. No images required.
+        st.subheader("🎨 Color Harmony")
+        # Visualizing the contrast palette
         st.markdown(f"""
-            <div style="
-                width: {pixel_l}px; 
-                height: {pixel_w}px; 
-                background-color: #ffffff; 
-                border: 5px solid #333; 
-                position: relative; 
-                margin: auto;
-                box-shadow: 10px 10px 30px rgba(0,0,0,0.1);
-                background-image: radial-gradient(#ddd 1px, transparent 1px);
-                background-size: {scale}px {scale}px;
-            ">
-                <div style="position: absolute; bottom: 10px; right: 10px; font-size: 12px; color: #999;">{l}' x {w}'</div>
-                
-                {"<div style='position:absolute; top:20%; left:10%; width:100px; height:150px; background:"+user_color+"; border:2px solid #333; display:flex; align-items:center; justify-content:center; color:white; font-size:10px;'>SOFA</div>" if room_type=="Living Room" else ""}
-                {"<div style='position:absolute; top:30%; left:30%; width:120px; height:140px; background:"+user_color+"; border:2px solid #333; display:flex; align-items:center; justify-content:center; color:white; font-size:10px;'>BED</div>" if room_type=="Bedroom" else ""}
-                {"<div style='position:absolute; top:10%; left:10%; width:80px; height:120px; background:"+user_color+"; border:2px solid #333; display:flex; align-items:center; justify-content:center; color:white; font-size:10px;'>DESK</div>" if room_type=="Office" else ""}
-                
-                <div style="
-                    position: absolute; 
-                    top: 50%; left: 50%; 
-                    transform: translate(-50%, -50%);
-                    width: {pixel_l/2}px; height: {pixel_w/2}px; 
-                    border: 2px dashed {comp_color};
-                    background-color: {comp_color}22;
-                    display: flex; align-items: center; justify-content: center;
-                    color: {comp_color}; font-size: 12px;
-                ">RUG (AI ACCENT)</div>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <div style="text-align:center;">
+                    <div style="background:{user_color}; width:80px; height:80px; border-radius:15px; border:3px solid #eee;"></div>
+                    <small>Primary</small>
+                </div>
+                <div style="font-size: 24px;">+</div>
+                <div style="text-align:center;">
+                    <div style="background:{comp_color}; width:80px; height:80px; border-radius:15px; border:3px solid #eee;"></div>
+                    <small>Contrast</small>
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
-    st.success("✅ Floor plan generated using spatial constraints.")
-else:
-    st.info("👈 Enter details in the sidebar and click 'Generate AI Layout'.")
+    st.divider()
+
+    # --- 5. THE IMAGE SECTION ---
+    st.subheader(f"🖼️ AI Concept Visualization")
+    
+    # We use a curated, high-quality stable link for interior design
+    # These are high-resolution professional photography links
+    img_links = {
+        "Living Room": "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?q=80&w=1200&auto=format&fit=crop",
+        "Bedroom": "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=1200&auto=format&fit=crop",
+        "Office": "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+        "Kitchen": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=1200&auto=format&fit=crop"
+    }
+    
+    final_img = img_links.get(room_type)
+    
+    # We wrap the image in a styled container for a
+    
