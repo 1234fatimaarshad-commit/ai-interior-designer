@@ -4,63 +4,80 @@ import colorsys
 # --- 1. Page Config ---
 st.set_page_config(page_title="AI Interior Lab", layout="wide")
 
-# --- 2. Logic Functions ---
+# --- 2. Color Logic ---
 def get_complementary(hex_color):
     hex_color = hex_color.lstrip('#')
     rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
     h, s, v = colorsys.rgb_to_hsv(rgb[0]/255, rgb[1]/255, rgb[2]/255)
-    comp_h = (h + 0.5) % 1.0
-    return '#%02x%02x%02x' % tuple(int(x*255) for x in colorsys.hsv_to_rgb(comp_h, s, v))
+    return '#%02x%02x%02x' % tuple(int(x*255) for x in colorsys.hsv_to_rgb((h + 0.5) % 1.0, s, v))
 
 # --- 3. Sidebar ---
 with st.sidebar:
     st.header("🛠️ Design Inputs")
-    room = st.selectbox("Room Type", ["Living Room", "Bedroom", "Office"])
+    room_type = st.selectbox("Room Type", ["Living Room", "Bedroom", "Office"])
     style = st.selectbox("Aesthetic", ["Modern", "Industrial", "Minimalist"])
-    l = st.number_input("Length (ft)", value=15)
-    w = st.number_input("Width (ft)", value=12)
+    l = st.number_input("Length (ft)", min_value=5, value=15)
+    w = st.number_input("Width (ft)", min_value=5, value=12)
     user_color = st.color_picker("Theme Color", "#3498db")
     
-    generate_btn = st.button("✨ Generate AI Design", use_container_width=True)
+    generate_btn = st.button("🚀 Generate AI Layout", use_container_width=True)
 
 # --- 4. Main Screen ---
-st.title("🏠 AI Interior Design Studio")
+st.title("🏠 AI Interior Layout Engine")
 
 if generate_btn:
     comp_color = get_complementary(user_color)
     area = l * w
     
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1, 2])
     with col1:
-        st.subheader("📐 Spatial Analysis")
-        st.write(f"**Plan:** {style} {room}")
-        st.write(f"**Area:** {area} sq. ft.")
-    
+        st.subheader("📐 Analysis")
+        st.metric("Total Area", f"{area} sq. ft.")
+        st.write(f"**Style:** {style}")
+        st.write(f"**Contrast Color:** {comp_color}")
+        
+        st.info(f"AI suggests a {style} furniture set using {user_color} as the base and {comp_color} for accents.")
+
     with col2:
-        st.subheader("🎨 Color Palette")
+        st.subheader("🗺️ AI Generated Floor Plan")
+        
+        # We calculate the scaling to fit the screen
+        scale = 20  # 1 foot = 20 pixels
+        pixel_w = w * scale
+        pixel_l = l * scale
+
+        # This is a PURE CODE-BASED DRAWING. No images required.
         st.markdown(f"""
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <div style="background:{user_color}; width:50px; height:50px; border-radius:10px; border:2px solid #ddd;"></div>
-                <div style="background:{comp_color}; width:50px; height:50px; border-radius:10px; border:2px solid #ddd;"></div>
+            <div style="
+                width: {pixel_l}px; 
+                height: {pixel_w}px; 
+                background-color: #ffffff; 
+                border: 5px solid #333; 
+                position: relative; 
+                margin: auto;
+                box-shadow: 10px 10px 30px rgba(0,0,0,0.1);
+                background-image: radial-gradient(#ddd 1px, transparent 1px);
+                background-size: {scale}px {scale}px;
+            ">
+                <div style="position: absolute; bottom: 10px; right: 10px; font-size: 12px; color: #999;">{l}' x {w}'</div>
+                
+                {"<div style='position:absolute; top:20%; left:10%; width:100px; height:150px; background:"+user_color+"; border:2px solid #333; display:flex; align-items:center; justify-content:center; color:white; font-size:10px;'>SOFA</div>" if room_type=="Living Room" else ""}
+                {"<div style='position:absolute; top:30%; left:30%; width:120px; height:140px; background:"+user_color+"; border:2px solid #333; display:flex; align-items:center; justify-content:center; color:white; font-size:10px;'>BED</div>" if room_type=="Bedroom" else ""}
+                {"<div style='position:absolute; top:10%; left:10%; width:80px; height:120px; background:"+user_color+"; border:2px solid #333; display:flex; align-items:center; justify-content:center; color:white; font-size:10px;'>DESK</div>" if room_type=="Office" else ""}
+                
+                <div style="
+                    position: absolute; 
+                    top: 50%; left: 50%; 
+                    transform: translate(-50%, -50%);
+                    width: {pixel_l/2}px; height: {pixel_w/2}px; 
+                    border: 2px dashed {comp_color};
+                    background-color: {comp_color}22;
+                    display: flex; align-items: center; justify-content: center;
+                    color: {comp_color}; font-size: 12px;
+                ">RUG (AI ACCENT)</div>
             </div>
-            <p>Primary: {user_color} | AI Contrast: {comp_color}</p>
         """, unsafe_allow_html=True)
 
-    st.divider()
-
-    # --- THE ULTIMATE FIX: BASE64 EMBEDDED IMAGE ---
-    st.subheader(f"AI Concept Visualization: {style} {room}")
-    
-    # This is a tiny portion of a base64 string for a real interior. 
-    # Because it is hardcoded, it works OFFLINE and on ANY network.
-    st.markdown(f"""
-        <div style="width:100%; padding:20px; background-color:{user_color}11; border:3px solid {user_color}; border-radius:15px; text-align:center;">
-            <img src="https://images.unsplash.com/photo-1616486341353-c58d3d42bbbb?auto=format&fit=crop&q=80&w=800" 
-                 style="width:100%; max-width:800px; border-radius:10px; box-shadow: 5px 5px 15px rgba(0,0,0,0.1);">
-            <h3 style="color:{user_color}; margin-top:15px;">{style} {room} Design Plan</h3>
-            <p style="color:#666;">Optimized for {l}ft x {w}ft dimensions using {style} aesthetic guidelines.</p>
-        </div>
-    """, unsafe_allow_html=True)
-
+    st.success("✅ Floor plan generated using spatial constraints.")
 else:
-    st.info("👈 Enter details in the sidebar and click Generate.")
+    st.info("👈 Enter details in the sidebar and click 'Generate AI Layout'.")
