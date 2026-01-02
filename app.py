@@ -11,7 +11,7 @@ st.set_page_config(
 
 # Initialize session state for image randomness
 if 'img_seed' not in st.session_state:
-    st.session_state.img_seed = random.randint(1, 10000)
+    st.session_state.img_seed = random.randint(1, 1000)
 if 'clicked' not in st.session_state:
     st.session_state.clicked = False
 
@@ -38,9 +38,9 @@ with st.sidebar:
     st.subheader("Color Palette")
     primary_color = st.color_picker("Pick Theme Color", "#3498db")
     
-    # Generate Button
+    # Generate Button - Updates the seed to force a new image
     if st.button("✨ Generate AI Design", use_container_width=True):
-        st.session_state.img_seed = random.randint(1, 10000)
+        st.session_state.img_seed = random.randint(1, 1000)
         st.session_state.clicked = True
 
 # --- 4. Main Screen UI ---
@@ -51,17 +51,16 @@ if st.session_state.clicked:
     area = length * width
     contrast_color = get_complementary(primary_color)
     
-    # Column Layout
     col_a, col_b = st.columns([1, 1])
     
     with col_a:
         st.subheader("📐 Spatial Analysis")
-        st.write(f"**Selected Style:** {style}")
+        st.write(f"**Style:** {style} | **Type:** {room_type}")
         st.write(f"**Total Area:** {area} sq. ft.")
         if area < 120:
-            st.warning("Space Grade: Compact. AI recommends light textures.")
+            st.warning("Space Grade: Compact.")
         else:
-            st.success("Space Grade: Spacious. AI recommends zoning.")
+            st.success("Space Grade: Spacious.")
 
     with col_b:
         st.subheader("🎨 Color Theory")
@@ -71,20 +70,20 @@ if st.session_state.clicked:
 
     st.divider()
 
-    # --- FIXED IMAGE SECTION ---
-    st.subheader(f"🖼️ AI Generated Visual: {style} {room_type}")
+    # --- IMAGE SECTION ---
+    st.subheader(f"🖼️ AI Visualization: {style} {room_type}")
     
-    # Using LoremFlickr which is active and reliable
-    # Logic: keywords + lock (seed) to ensure a unique image per click
-    search_keywords = f"interior,{style.lower()},{room_type.lower()}"
-    img_url = f"https://loremflickr.com/1200/600/{search_keywords}?lock={st.session_state.img_seed}"
+    # Picsum uses a simple ID system which is highly reliable for web apps
+    # Each ID represents a high-quality photo. 
+    # We use the seed as the ID to pull a different high-quality photo each time.
+    img_url = f"https://picsum.photos/id/{st.session_state.img_seed % 100 + 10}/1200/600"
     
-    st.image(img_url, caption=f"AI Visualization Concept (Ref ID: {st.session_state.img_seed})", use_column_width=True)
+    st.image(img_url, caption=f"AI Concept ID: {st.session_state.img_seed}", use_container_width=True)
 
 else:
     st.info("👈 Fill in your details in the sidebar and click 'Generate'!")
-    # Reliable placeholder
-    st.image("https://loremflickr.com/1200/600/interior,modern,livingroom?lock=1")
+    # Reliable default placeholder
+    st.image("https://picsum.photos/id/20/1200/600", use_container_width=True)
 
 st.markdown("---")
 st.caption("AI Interior Design Lab Project | Powered by Python & Streamlit")
