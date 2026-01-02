@@ -1,76 +1,82 @@
 import streamlit as st
 import colorsys
-import random # Added to generate unique images
+import random
 
-# --- Page Configuration ---
-st.set_page_config(page_title="AI Interior Designer Pro", layout="wide", page_icon="🏠")
+# --- Page Setup ---
+st.set_page_config(page_title="AI Interior Designer", layout="wide")
 
-# --- Logic Functions ---
-def hex_to_rgb(hex_str):
-    hex_str = hex_str.lstrip('#')
-    return tuple(int(hex_str[i:i+2], 16) for i in (0, 2, 4))
+# Initialize a 'seed' in session state so it persists but can be updated
+if 'img_seed' not in st.session_state:
+    st.session_state.img_seed = random.randint(1, 10000)
 
-def get_color_logic(hex_color):
-    rgb = hex_to_rgb(hex_color)
+# --- Color Logic ---
+def get_complementary(hex_color):
+    hex_color = hex_color.lstrip('#')
+    rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
     h, s, v = colorsys.rgb_to_hsv(rgb[0]/255, rgb[1]/255, rgb[2]/255)
-    comp_h = (h + 0.5) % 1.0
-    return '#%02x%02x%02x' % tuple(int(x*255) for x in colorsys.hsv_to_rgb(comp_h, s, v))
+    return '#%02x%02x%02x' % tuple(int(x*255) for x in colorsys.hsv_to_rgb((h + 0.5) % 1.0, s, v))
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.header("⚙️ Design Settings")
-    room_type = st.selectbox("Room Type", ["Living Room", "Bedroom", "Office", "Kitchen", "Dining Room"])
-    style = st.selectbox("Design Style", ["Modern", "Minimalist", "Industrial", "Bohemian", "Luxury"])
+    st.header("🏠 Design Inputs")
+    room = st.selectbox("Room Type", ["Living Room", "Bedroom", "Office", "Kitchen"])
+    style = st.selectbox("Aesthetic", ["Modern", "Minimalist", "Industrial", "Bohemian"])
     
-    st.subheader("Dimensions")
+    st.divider()
     l = st.number_input("Length (ft)", value=15)
     w = st.number_input("Width (ft)", value=12)
     
-    primary_color = st.color_picker("Theme Color", "#3498db")
+    user_color = st.color_picker("Theme Color", "#3498db")
     
-    # The Generate Button
-    generate_btn = st.button("✨ Generate New Design", use_container_width=True)
+    # When button is clicked, we refresh the seed
+    if st.button("✨ Generate AI Design", use_container_width=True):
+        st.session_state.img_seed = random.randint(1, 10000)
+        st.session_state.clicked = True
+    else:
+        if 'clicked' not in st.session_state:
+            st.session_state.clicked = False
 
 # --- MAIN SCREEN ---
-st.title("Interior AI Design Result")
+st.title("Interior AI Design Studio")
 
-if generate_btn:
-    # 1. Calculations
-    area = l * w
-    contrast = get_color_logic(primary_color)
-    # This random number forces the API to provide a NEW image every click
-    seed = random.randint(1, 1000) 
+if st.session_state.clicked:
+    comp_color = get_complementary(user_color)
     
-    # 2. Results Header
-    col1, col2 = st.columns([1, 2])
-    
+    # 1. Output Data Section
+    col1, col2 = st.columns(2)
     with col1:
-        st.metric("Total Area", f"{area} sq. ft.")
-        st.write(f"**Style Applied:** {style}")
-        st.markdown(f"**Color Palette:**")
-        st.color_picker("Primary", primary_color, disabled=True)
-        st.color_picker("AI Contrast Suggestion", contrast, disabled=True)
-
+        st.subheader("📐 Spatial Specs")
+        st.write(f"**Room:** {style} {room}")
+        st.write(f"**Area:** {l * w} sq. ft.")
+        st.write(f"**Primary Theme:** {user_color}")
+    
     with col2:
-        st.info(f"AI Analysis: For a {area} sq. ft. {room_type}, we recommend a {style} layout focusing on the {primary_color} palette.")
+        st.subheader("🎨 AI Color Contrast")
+        st.markdown(f"""
+            <div style="display: flex; gap: 10px;">
+                <div style="background:{user_color}; width:50px; height:50px; border-radius:5px; border:1px solid #ccc;"></div>
+                <div style="background:{comp_color}; width:50px; height:50px; border-radius:5px; border:1px solid #ccc;"></div>
+            </div>
+            <p>AI suggests <b>{comp_color}</b> as the perfect contrast for <b>{user_color}</b>.</p>
+        """, unsafe_allow_html=True)
 
     st.divider()
 
-    # 3. FIXED IMAGE GENERATION
-    st.subheader(f"Visualizing your {style} {room_type}")
+    # 2. IMAGE GENERATION SECTION
+    st.subheader(f"Generated Concept: {style} {room}")
     
-    # We build a dynamic URL with keywords and a random seed
-    # format: https://loremflickr.com/cache/width/height/keywords?lock=random_number
-    img_url = f"https://loremflickr.com/1200/600/{room_type},{style}/all?lock={seed}"
+    # Using a "lock" parameter with our session seed to FORCE a new image fetch
+    # We add room and style as keywords to the URL
+    keywords = f"{style.lower()},{room.lower()}"
+    img_url = f"https://loremflickr.com/1200/600/{keywords}?lock={st.session_state.img_seed}"
     
-    st.image(img_url, caption=f"AI Generated Concept (Ref: {seed})", use_column_width=True)
+    # Display the image
+    st.image(img_url, use_column_width=True)
     
-    # 4. Design Specifics
-    st.subheader("🛠️ Implementation Guide")
-    st.write(f"1. Paint the primary accent wall in **{primary_color}**.")
-    st.write(f"2. Use furniture with **{style}** textures (e.g., {'metal/wood' if style == 'Industrial' else 'sleek fabric'}).")
-    st.write(f"3. Add decor items in **{contrast}** to create visual depth.")
+    st.caption(f"Unique Design ID: AI-RE-{st.session_state.img_seed}")
 
 else:
-    st.markdown("### ⬅️ Adjust settings in the sidebar and click Generate.")
-    st.image("https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80", caption="Waiting for your design inputs...")
+    st.info("👈 Adjust your room settings in the sidebar and click 'Generate' to see your AI interior plan!")
+    # Show a static placeholder until they click
+    st.image("https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80")
+    
